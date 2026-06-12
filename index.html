@@ -2,116 +2,244 @@
 <html lang="vi">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>🔫 Laser Shooter - Bắn Súng Tia</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>🔫 MiniKs - Bắn Súng 3D Online</title>
     <link rel="stylesheet" href="css/style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
+    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
 <body>
-    <!-- Màn hình menu chính -->
-    <div id="mainMenu" class="screen active">
-        <div class="menu-container">
-            <h1 class="game-title">🔫 LASER SHOOTER</h1>
-            <p class="subtitle">Bắn Súng Tia - Ong Nham</p>
-            <div class="menu-buttons">
-                <button onclick="game.showMapSelection()" class="btn btn-primary">
-                    🎮 CHƠI NGAY
-                </button>
-                <button onclick="game.showMultiplayer()" class="btn btn-secondary">
-                    👥 CHƠI CÙNG BẠN BÈ
-                </button>
-                <button onclick="game.showSettings()" class="btn btn-secondary">
-                    ⚙️ CÀI ĐẶT
-                </button>
+    <!-- Loading Screen -->
+    <div id="loading" class="screen active">
+        <div class="loading-content">
+            <h1 class="game-logo">🔫 MiniKs</h1>
+            <div class="loading-bar">
+                <div class="loading-progress"></div>
             </div>
+            <p>Đang tải game...</p>
         </div>
     </div>
 
-    <!-- Màn hình chọn map -->
-    <div id="mapSelection" class="screen">
-        <h2>🗺️ CHỌN BẢN ĐỒ</h2>
-        <div class="map-grid" id="mapGrid">
-            <div class="map-card" onclick="game.selectMap('space')">
-                <div class="map-preview space-map"></div>
-                <h3>🚀 Không Gian</h3>
-                <p>Bắn nhau trong vũ trụ</p>
+    <!-- Main Menu -->
+    <div id="mainMenu" class="screen">
+        <div class="menu-container">
+            <h1 class="game-title">🔫 MINIKS</h1>
+            <p class="subtitle">Bắn Súng 3D Online</p>
+            
+            <div class="menu-buttons">
+                <button onclick="game.startSoloMode()" class="btn btn-solo">
+                    🎮 CHƠI ĐƠN (CÓ BOT)
+                </button>
+                
+                <button onclick="game.showOnlineMenu()" class="btn btn-online">
+                    🌐 CHƠI ONLINE
+                </button>
+                
+                <button onclick="game.showWeaponSelect()" class="btn btn-weapon">
+                    🔫 CHỌN SÚNG
+                </button>
+                
+                <button onclick="game.showSettings()" class="btn btn-settings">
+                    ⚙️ CÀI ĐẶT
+                </button>
             </div>
-            <div class="map-card" onclick="game.selectMap('jungle')">
-                <div class="map-preview jungle-map"></div>
-                <h3>🌴 Rừng Rậm</h3>
-                <p>Ẩn nấp trong rừng</p>
+            
+            <div class="version">v1.0.0 - MiniKs Studio</div>
+        </div>
+    </div>
+
+    <!-- Chọn súng -->
+    <div id="weaponSelect" class="screen">
+        <h2>🔫 CHỌN VŨ KHÍ</h2>
+        <div class="weapon-grid" id="weaponGrid">
+            <!-- Shotgun -->
+            <div class="weapon-card selected" onclick="game.selectWeapon('shotgun')">
+                <div class="weapon-icon">🔫</div>
+                <h3>SÚNG SĂN</h3>
+                <div class="weapon-stats">
+                    <span class="stat">💥 Sát thương: 80</span>
+                    <span class="stat">🎯 Tốc bắn: Chậm</span>
+                    <span class="stat">📦 Đạn: 8 viên</span>
+                </div>
+                <div class="weapon-skin">🟤 Gỗ cổ điển</div>
             </div>
-            <div class="map-card" onclick="game.selectMap('city')">
-                <div class="map-preview city-map"></div>
-                <h3>🏙️ Thành Phố</h3>
-                <p>Chiến đấu đường phố</p>
+            
+            <!-- Rifle -->
+            <div class="weapon-card" onclick="game.selectWeapon('rifle')">
+                <div class="weapon-icon">🎯</div>
+                <h3>SÚNG TRƯỜNG</h3>
+                <div class="weapon-stats">
+                    <span class="stat">💥 Sát thương: 45</span>
+                    <span class="stat">🎯 Tốc bắn: Trung bình</span>
+                    <span class="stat">📦 Đạn: 30 viên</span>
+                </div>
+                <div class="weapon-skin">⚫ Chiến thuật</div>
             </div>
-            <div class="map-card" onclick="game.selectMap('desert')">
-                <div class="map-preview desert-map"></div>
-                <h3>🏜️ Sa Mạc</h3>
-                <p>Sinh tồn trong cát</p>
+            
+            <!-- Sniper -->
+            <div class="weapon-card" onclick="game.selectWeapon('sniper')">
+                <div class="weapon-icon">🔭</div>
+                <h3>SÚNG BẮN TỈA</h3>
+                <div class="weapon-stats">
+                    <span class="stat">💥 Sát thương: 150</span>
+                    <span class="stat">🎯 Tốc bắn: Rất chậm</span>
+                    <span class="stat">📦 Đạn: 5 viên</span>
+                </div>
+                <div class="weapon-skin">🟢 Quân đội</div>
+            </div>
+            
+            <!-- Laser Gun -->
+            <div class="weapon-card" onclick="game.selectWeapon('laser')">
+                <div class="weapon-icon">⚡</div>
+                <h3>SÚNG LASER</h3>
+                <div class="weapon-stats">
+                    <span class="stat">💥 Sát thương: 60</span>
+                    <span class="stat">🎯 Tốc bắn: Nhanh</span>
+                    <span class="stat">📦 Năng lượng: 100</span>
+                </div>
+                <div class="weapon-skin">🔵 Công nghệ cao</div>
+            </div>
+            
+            <!-- Rocket -->
+            <div class="weapon-card" onclick="game.selectWeapon('rocket')">
+                <div class="weapon-icon">🚀</div>
+                <h3>SÚNG ROCKET</h3>
+                <div class="weapon-stats">
+                    <span class="stat">💥 Sát thương: 200</span>
+                    <span class="stat">🎯 Tốc bắn: Rất chậm</span>
+                    <span class="stat">📦 Đạn: 3 viên</span>
+                </div>
+                <div class="weapon-skin">🔴 Hủy diệt</div>
             </div>
         </div>
         <button onclick="game.backToMenu()" class="btn btn-back">← QUAY LẠI</button>
     </div>
 
-    <!-- Màn hình chơi game -->
-    <div id="gameScreen" class="screen">
-        <canvas id="gameCanvas"></canvas>
-        
-        <!-- Joystick cho mobile -->
-        <div id="joystickContainer">
-            <div id="joystick">
-                <div id="joystickKnob"></div>
+    <!-- Online Menu -->
+    <div id="onlineMenu" class="screen">
+        <h2>🌐 CHƠI ONLINE</h2>
+        <div class="online-options">
+            <div class="room-create">
+                <h3>TẠO PHÒNG</h3>
+                <input type="text" id="playerName" placeholder="Tên của bạn" maxlength="15">
+                <select id="mapSelect">
+                    <option value="city">🏙️ Thành Phố</option>
+                    <option value="space">🚀 Không Gian</option>
+                    <option value="jungle">🌴 Rừng Rậm</option>
+                    <option value="desert">🏜️ Sa Mạc</option>
+                </select>
+                <button onclick="game.createRoom()" class="btn btn-create">🎮 TẠO PHÒNG</button>
+            </div>
+            
+            <div class="room-join">
+                <h3>THAM GIA PHÒNG</h3>
+                <input type="text" id="roomCode" placeholder="Mã phòng" maxlength="6">
+                <button onclick="game.joinRoom()" class="btn btn-join">🔗 THAM GIA</button>
             </div>
         </div>
+        <div id="roomInfo" style="display:none;">
+            <p>Mã phòng: <strong id="roomCodeDisplay">------</strong></p>
+            <p>Người chơi: <span id="playerCount">1/8</span></p>
+            <button onclick="game.startOnlineGame()" class="btn btn-start">▶️ BẮT ĐẦU</button>
+        </div>
+        <button onclick="game.backToMenu()" class="btn btn-back">← QUAY LẠI</button>
+    </div>
+
+    <!-- Game Screen -->
+    <div id="gameScreen" class="screen">
+        <div id="gameContainer"></div>
         
-        <!-- Nút bắn -->
-        <button id="shootButton" class="action-button">🔫 BẮN</button>
-        
-        <!-- Nút đặc biệt -->
-        <button id="specialButton" class="action-button special">⚡</button>
-        
-        <!-- Thông tin game -->
-        <div id="gameUI">
+        <!-- HUD -->
+        <div id="hud">
             <div id="healthBar">
                 <div id="healthFill"></div>
                 <span>❤️ <span id="healthText">100</span></span>
             </div>
+            
+            <div id="shieldBar">
+                <div id="shieldFill"></div>
+                <span>🛡️ <span id="shieldText">50</span></span>
+            </div>
+            
+            <div id="ammoDisplay">
+                <span id="currentAmmo">30</span> / <span id="maxAmmo">30</span>
+            </div>
+            
+            <div id="weaponDisplay">
+                <span id="weaponIcon">🔫</span>
+                <span id="weaponName">Súng Săn</span>
+            </div>
+            
             <div id="score">
                 🎯 <span id="scoreText">0</span>
             </div>
+            
             <div id="kills">
                 💀 <span id="killsText">0</span>
             </div>
-            <div id="timer">
-                ⏱️ <span id="timerText">3:00</span>
+            
+            <div id="minimap">
+                <canvas id="minimapCanvas"></canvas>
             </div>
         </div>
         
-        <!-- Bảng xếp hạng trong game -->
-        <div id="leaderboard" style="display: none;">
-            <h3>🏆 TOP NGƯỜI CHƠI</h3>
-            <div id="leaderboardList"></div>
+        <!-- Crosshair -->
+        <div id="crosshair">+</div>
+        
+        <!-- Mobile Controls -->
+        <div id="mobileControls">
+            <div id="joystickMove">
+                <div id="joystickMoveKnob"></div>
+            </div>
+            <div id="joystickAim">
+                <div id="joystickAimKnob"></div>
+            </div>
+            <button id="shootBtn" class="mobile-btn">🔫</button>
+            <button id="reloadBtn" class="mobile-btn">🔄</button>
+            <button id="jumpBtn" class="mobile-btn">⬆️</button>
+            <button id="switchWeaponBtn" class="mobile-btn">🔁</button>
+        </div>
+        
+        <!-- Kill Feed -->
+        <div id="killFeed"></div>
+        
+        <!-- Chat -->
+        <div id="chatBox" style="display:none;">
+            <div id="chatMessages"></div>
+            <input type="text" id="chatInput" placeholder="Nhấn Enter để chat...">
         </div>
     </div>
 
-    <!-- Màn hình game over -->
+    <!-- Game Over -->
     <div id="gameOver" class="screen">
-        <h2>💀 GAME OVER</h2>
-        <div class="stats">
-            <p>🎯 Điểm: <span id="finalScore">0</span></p>
-            <p>💀 Hạ gục: <span id="finalKills">0</span></p>
-            <p>⏱️ Thời gian: <span id="finalTime">0:00</span></p>
+        <h2 id="gameOverTitle">💀 GAME OVER</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-label">Điểm</div>
+                <div class="stat-value" id="finalScore">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💀</div>
+                <div class="stat-label">Hạ gục</div>
+                <div class="stat-value" id="finalKills">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">💀</div>
+                <div class="stat-label">Chết</div>
+                <div class="stat-value" id="finalDeaths">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon">🎯</div>
+                <div class="stat-label">Độ chính xác</div>
+                <div class="stat-value" id="finalAccuracy">0%</div>
+            </div>
         </div>
-        <button onclick="game.restartGame()" class="btn btn-primary">🔄 CHƠI LẠI</button>
+        <button onclick="game.restartGame()" class="btn btn-restart">🔄 CHƠI LẠI</button>
         <button onclick="game.backToMenu()" class="btn btn-back">🏠 MENU</button>
     </div>
 
-    <script src="js/game.js"></script>
-    <script src="js/player.js"></script>
-    <script src="js/bot.js"></script>
-    <script src="js/map.js"></script>
-    <script src="js/bullet.js"></script>
-    <script src="js/ui.js"></script>
+    <script type="module" src="js/main.js"></script>
 </body>
 </html>

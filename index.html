@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🔫 Laser Shooter - Bắn Súng Tia</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <!-- Màn hình menu chính -->
+    <div id="mainMenu" class="screen active">
+        <div class="menu-container">
+            <h1 class="game-title">🔫 LASER SHOOTER</h1>
+            <p class="subtitle">Bắn Súng Tia - Ong Nham</p>
+            <div class="menu-buttons">
+                <button onclick="game.showMapSelection()" class="btn btn-primary">
+                    🎮 CHƠI NGAY
+                </button>
+                <button onclick="game.showMultiplayer()" class="btn btn-secondary">
+                    👥 CHƠI CÙNG BẠN BÈ
+                </button>
+                <button onclick="game.showSettings()" class="btn btn-secondary">
+                    ⚙️ CÀI ĐẶT
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Màn hình chọn map -->
+    <div id="mapSelection" class="screen">
+        <h2>🗺️ CHỌN BẢN ĐỒ</h2>
+        <div class="map-grid" id="mapGrid">
+            <div class="map-card" onclick="game.selectMap('space')">
+                <div class="map-preview space-map"></div>
+                <h3>🚀 Không Gian</h3>
+                <p>Bắn nhau trong vũ trụ</p>
+            </div>
+            <div class="map-card" onclick="game.selectMap('jungle')">
+                <div class="map-preview jungle-map"></div>
+                <h3>🌴 Rừng Rậm</h3>
+                <p>Ẩn nấp trong rừng</p>
+            </div>
+            <div class="map-card" onclick="game.selectMap('city')">
+                <div class="map-preview city-map"></div>
+                <h3>🏙️ Thành Phố</h3>
+                <p>Chiến đấu đường phố</p>
+            </div>
+            <div class="map-card" onclick="game.selectMap('desert')">
+                <div class="map-preview desert-map"></div>
+                <h3>🏜️ Sa Mạc</h3>
+                <p>Sinh tồn trong cát</p>
+            </div>
+        </div>
+        <button onclick="game.backToMenu()" class="btn btn-back">← QUAY LẠI</button>
+    </div>
+
+    <!-- Màn hình chơi game -->
+    <div id="gameScreen" class="screen">
+        <canvas id="gameCanvas"></canvas>
+        
+        <!-- Joystick cho mobile -->
+        <div id="joystickContainer">
+            <div id="joystick">
+                <div id="joystickKnob"></div>
+            </div>
+        </div>
+        
+        <!-- Nút bắn -->
+        <button id="shootButton" class="action-button">🔫 BẮN</button>
+        
+        <!-- Nút đặc biệt -->
+        <button id="specialButton" class="action-button special">⚡</button>
+        
+        <!-- Thông tin game -->
+        <div id="gameUI">
+            <div id="healthBar">
+                <div id="healthFill"></div>
+                <span>❤️ <span id="healthText">100</span></span>
+            </div>
+            <div id="score">
+                🎯 <span id="scoreText">0</span>
+            </div>
+            <div id="kills">
+                💀 <span id="killsText">0</span>
+            </div>
+            <div id="timer">
+                ⏱️ <span id="timerText">3:00</span>
+            </div>
+        </div>
+        
+        <!-- Bảng xếp hạng trong game -->
+        <div id="leaderboard" style="display: none;">
+            <h3>🏆 TOP NGƯỜI CHƠI</h3>
+            <div id="leaderboardList"></div>
+        </div>
+    </div>
+
+    <!-- Màn hình game over -->
+    <div id="gameOver" class="screen">
+        <h2>💀 GAME OVER</h2>
+        <div class="stats">
+            <p>🎯 Điểm: <span id="finalScore">0</span></p>
+            <p>💀 Hạ gục: <span id="finalKills">0</span></p>
+            <p>⏱️ Thời gian: <span id="finalTime">0:00</span></p>
+        </div>
+        <button onclick="game.restartGame()" class="btn btn-primary">🔄 CHƠI LẠI</button>
+        <button onclick="game.backToMenu()" class="btn btn-back">🏠 MENU</button>
+    </div>
+
+    <script src="js/game.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/bot.js"></script>
+    <script src="js/map.js"></script>
+    <script src="js/bullet.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

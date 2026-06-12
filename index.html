@@ -3,243 +3,688 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>🔫 MiniKs - Bắn Súng 3D Online</title>
-    <link rel="stylesheet" href="css/style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/simple-peer@9.11.1/simplepeer.min.js"></script>
-    <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
+    <title>🔫 MiniKs - Bắn Súng 3D</title>
+    
+    <!-- CSS Inline - Load ngay lập tức -->
+    <style>
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:Arial,sans-serif;background:#0a0a1a;overflow:hidden;touch-action:none;user-select:none;color:#fff}
+        
+        /* Loading nhanh */
+        #loading{
+            position:fixed;top:0;left:0;width:100%;height:100%;
+            background:linear-gradient(135deg,#0a0a1a,#1a1a3a);
+            display:flex;justify-content:center;align-items:center;z-index:9999;
+            transition:opacity 0.5s
+        }
+        .loader{text-align:center}
+        .loader-icon{font-size:60px;animation:bounce 1s infinite}
+        @keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-20px)}}
+        .loader-text{font-size:24px;margin-top:20px;color:#ff6b35}
+        .progress-bar{
+            width:200px;height:4px;background:rgba(255,255,255,0.1);
+            border-radius:2px;margin:20px auto;overflow:hidden
+        }
+        .progress-fill{
+            width:0%;height:100%;background:#ff6b35;
+            animation:load 1.5s ease-in-out infinite;border-radius:2px
+        }
+        @keyframes load{0%{width:0%}50%{width:80%}100%{width:100%}}
+        
+        /* Screens */
+        .screen{display:none;position:fixed;top:0;left:0;width:100%;height:100%;z-index:100}
+        .screen.active{display:flex;justify-content:center;align-items:center;flex-direction:column}
+        
+        /* Menu */
+        #mainMenu{background:linear-gradient(135deg,#0a0a1a,#1a1a3a)}
+        .game-title{
+            font-size:3em;font-weight:900;
+            background:linear-gradient(45deg,#ff6b35,#00d4ff);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            margin-bottom:10px
+        }
+        .subtitle{font-size:1em;color:#00d4ff;margin-bottom:30px;letter-spacing:3px}
+        
+        /* Buttons */
+        .btn{
+            display:block;width:280px;padding:15px;margin:10px auto;
+            border:none;border-radius:25px;font-size:1.1em;font-weight:bold;
+            cursor:pointer;text-align:center;transition:all 0.3s;text-decoration:none
+        }
+        .btn-solo{background:linear-gradient(135deg,#ff6b35,#ff8f5e);color:#fff}
+        .btn-online{background:linear-gradient(135deg,#00d4ff,#00a8cc);color:#fff}
+        .btn-weapon{background:linear-gradient(135deg,#ff00de,#ff6b9d);color:#fff}
+        
+        /* Game Container */
+        #gameContainer{width:100%;height:100%;position:fixed;top:0;left:0}
+        #gameCanvas{display:block;width:100%;height:100%}
+        
+        /* HUD */
+        #hud{
+            position:fixed;top:10px;left:10px;right:10px;
+            display:flex;justify-content:space-between;gap:10px;z-index:10;
+            pointer-events:none;flex-wrap:wrap
+        }
+        .hud-item{
+            background:rgba(0,0,0,0.7);padding:8px 15px;
+            border-radius:10px;font-size:0.9em;backdrop-filter:blur(5px)
+        }
+        #healthBar{width:150px;height:8px;background:#333;border-radius:4px;overflow:hidden}
+        #healthFill{height:100%;background:#ff4444;transition:width 0.3s;width:100%}
+        #ammo{font-size:1.3em;font-weight:bold}
+        
+        /* Crosshair */
+        #crosshair{
+            position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+            font-size:24px;pointer-events:none;z-index:20;opacity:0.8
+        }
+        
+        /* Mobile Controls */
+        #mobileControls{display:none;position:fixed;bottom:20px;left:0;right:0;z-index:30}
+        @media(max-width:768px){#mobileControls{display:block}}
+        #shootBtn{
+            position:absolute;bottom:40px;right:30px;
+            width:80px;height:80px;border-radius:50%;
+            background:rgba(255,0,0,0.7);border:none;
+            color:#fff;font-size:1.5em;cursor:pointer
+        }
+        #reloadBtn{
+            position:absolute;bottom:130px;right:30px;
+            width:50px;height:50px;border-radius:50%;
+            background:rgba(255,255,255,0.2);border:none;
+            color:#fff;font-size:1.2em;cursor:pointer
+        }
+        
+        /* Kill Feed */
+        #killFeed{
+            position:fixed;top:60px;right:10px;z-index:10;
+            display:flex;flex-direction:column;gap:5px
+        }
+        .kill-msg{
+            background:rgba(0,0,0,0.7);padding:5px 10px;
+            border-radius:5px;font-size:0.8em;animation:slideIn 0.3s
+        }
+        @keyframes slideIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+        
+        /* Game Over */
+        #gameOver{background:rgba(0,0,0,0.9)}
+        .stats{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin:20px}
+        .stat-card{
+            background:rgba(255,255,255,0.1);padding:20px;
+            border-radius:10px;text-align:center
+        }
+        .stat-val{font-size:1.8em;font-weight:bold;color:#ffd700}
+    </style>
 </head>
 <body>
     <!-- Loading Screen -->
-    <div id="loading" class="screen active">
-        <div class="loading-content">
-            <h1 class="game-logo">🔫 MiniKs</h1>
-            <div class="loading-bar">
-                <div class="loading-progress"></div>
+    <div id="loading">
+        <div class="loader">
+            <div class="loader-icon">🔫</div>
+            <div class="loader-text">MiniKs</div>
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
             </div>
-            <p>Đang tải game...</p>
+            <div style="color:#aaa;font-size:12px">Đang tải...</div>
         </div>
     </div>
 
     <!-- Main Menu -->
     <div id="mainMenu" class="screen">
-        <div class="menu-container">
-            <h1 class="game-title">🔫 MINIKS</h1>
-            <p class="subtitle">Bắn Súng 3D Online</p>
-            
-            <div class="menu-buttons">
-                <button onclick="game.startSoloMode()" class="btn btn-solo">
-                    🎮 CHƠI ĐƠN (CÓ BOT)
-                </button>
-                
-                <button onclick="game.showOnlineMenu()" class="btn btn-online">
-                    🌐 CHƠI ONLINE
-                </button>
-                
-                <button onclick="game.showWeaponSelect()" class="btn btn-weapon">
-                    🔫 CHỌN SÚNG
-                </button>
-                
-                <button onclick="game.showSettings()" class="btn btn-settings">
-                    ⚙️ CÀI ĐẶT
-                </button>
-            </div>
-            
-            <div class="version">v1.0.0 - MiniKs Studio</div>
-        </div>
-    </div>
-
-    <!-- Chọn súng -->
-    <div id="weaponSelect" class="screen">
-        <h2>🔫 CHỌN VŨ KHÍ</h2>
-        <div class="weapon-grid" id="weaponGrid">
-            <!-- Shotgun -->
-            <div class="weapon-card selected" onclick="game.selectWeapon('shotgun')">
-                <div class="weapon-icon">🔫</div>
-                <h3>SÚNG SĂN</h3>
-                <div class="weapon-stats">
-                    <span class="stat">💥 Sát thương: 80</span>
-                    <span class="stat">🎯 Tốc bắn: Chậm</span>
-                    <span class="stat">📦 Đạn: 8 viên</span>
-                </div>
-                <div class="weapon-skin">🟤 Gỗ cổ điển</div>
-            </div>
-            
-            <!-- Rifle -->
-            <div class="weapon-card" onclick="game.selectWeapon('rifle')">
-                <div class="weapon-icon">🎯</div>
-                <h3>SÚNG TRƯỜNG</h3>
-                <div class="weapon-stats">
-                    <span class="stat">💥 Sát thương: 45</span>
-                    <span class="stat">🎯 Tốc bắn: Trung bình</span>
-                    <span class="stat">📦 Đạn: 30 viên</span>
-                </div>
-                <div class="weapon-skin">⚫ Chiến thuật</div>
-            </div>
-            
-            <!-- Sniper -->
-            <div class="weapon-card" onclick="game.selectWeapon('sniper')">
-                <div class="weapon-icon">🔭</div>
-                <h3>SÚNG BẮN TỈA</h3>
-                <div class="weapon-stats">
-                    <span class="stat">💥 Sát thương: 150</span>
-                    <span class="stat">🎯 Tốc bắn: Rất chậm</span>
-                    <span class="stat">📦 Đạn: 5 viên</span>
-                </div>
-                <div class="weapon-skin">🟢 Quân đội</div>
-            </div>
-            
-            <!-- Laser Gun -->
-            <div class="weapon-card" onclick="game.selectWeapon('laser')">
-                <div class="weapon-icon">⚡</div>
-                <h3>SÚNG LASER</h3>
-                <div class="weapon-stats">
-                    <span class="stat">💥 Sát thương: 60</span>
-                    <span class="stat">🎯 Tốc bắn: Nhanh</span>
-                    <span class="stat">📦 Năng lượng: 100</span>
-                </div>
-                <div class="weapon-skin">🔵 Công nghệ cao</div>
-            </div>
-            
-            <!-- Rocket -->
-            <div class="weapon-card" onclick="game.selectWeapon('rocket')">
-                <div class="weapon-icon">🚀</div>
-                <h3>SÚNG ROCKET</h3>
-                <div class="weapon-stats">
-                    <span class="stat">💥 Sát thương: 200</span>
-                    <span class="stat">🎯 Tốc bắn: Rất chậm</span>
-                    <span class="stat">📦 Đạn: 3 viên</span>
-                </div>
-                <div class="weapon-skin">🔴 Hủy diệt</div>
-            </div>
-        </div>
-        <button onclick="game.backToMenu()" class="btn btn-back">← QUAY LẠI</button>
-    </div>
-
-    <!-- Online Menu -->
-    <div id="onlineMenu" class="screen">
-        <h2>🌐 CHƠI ONLINE</h2>
-        <div class="online-options">
-            <div class="room-create">
-                <h3>TẠO PHÒNG</h3>
-                <input type="text" id="playerName" placeholder="Tên của bạn" maxlength="15">
-                <select id="mapSelect">
-                    <option value="city">🏙️ Thành Phố</option>
-                    <option value="space">🚀 Không Gian</option>
-                    <option value="jungle">🌴 Rừng Rậm</option>
-                    <option value="desert">🏜️ Sa Mạc</option>
-                </select>
-                <button onclick="game.createRoom()" class="btn btn-create">🎮 TẠO PHÒNG</button>
-            </div>
-            
-            <div class="room-join">
-                <h3>THAM GIA PHÒNG</h3>
-                <input type="text" id="roomCode" placeholder="Mã phòng" maxlength="6">
-                <button onclick="game.joinRoom()" class="btn btn-join">🔗 THAM GIA</button>
-            </div>
-        </div>
-        <div id="roomInfo" style="display:none;">
-            <p>Mã phòng: <strong id="roomCodeDisplay">------</strong></p>
-            <p>Người chơi: <span id="playerCount">1/8</span></p>
-            <button onclick="game.startOnlineGame()" class="btn btn-start">▶️ BẮT ĐẦU</button>
-        </div>
-        <button onclick="game.backToMenu()" class="btn btn-back">← QUAY LẠI</button>
+        <h1 class="game-title">🔫 MINIKS</h1>
+        <p class="subtitle">BẮN SÚNG 3D ONLINE</p>
+        <button onclick="startGame('solo')" class="btn btn-solo">🎮 CHƠI ĐƠN + BOT</button>
+        <button onclick="alert('Tính năng đang phát triển!')" class="btn btn-online">🌐 CHƠI ONLINE</button>
+        <button onclick="selectWeapon()" class="btn btn-weapon">🔫 CHỌN SÚNG</button>
     </div>
 
     <!-- Game Screen -->
     <div id="gameScreen" class="screen">
-        <div id="gameContainer"></div>
+        <canvas id="gameCanvas"></canvas>
         
-        <!-- HUD -->
         <div id="hud">
-            <div id="healthBar">
-                <div id="healthFill"></div>
-                <span>❤️ <span id="healthText">100</span></span>
+            <div class="hud-item">
+                <span>❤️</span>
+                <div id="healthBar"><div id="healthFill"></div></div>
+                <span id="healthText">100</span>
             </div>
-            
-            <div id="shieldBar">
-                <div id="shieldFill"></div>
-                <span>🛡️ <span id="shieldText">50</span></span>
-            </div>
-            
-            <div id="ammoDisplay">
-                <span id="currentAmmo">30</span> / <span id="maxAmmo">30</span>
-            </div>
-            
-            <div id="weaponDisplay">
-                <span id="weaponIcon">🔫</span>
-                <span id="weaponName">Súng Săn</span>
-            </div>
-            
-            <div id="score">
-                🎯 <span id="scoreText">0</span>
-            </div>
-            
-            <div id="kills">
-                💀 <span id="killsText">0</span>
-            </div>
-            
-            <div id="minimap">
-                <canvas id="minimapCanvas"></canvas>
-            </div>
+            <div class="hud-item" id="ammo">🔫 30/30</div>
+            <div class="hud-item">🎯 <span id="score">0</span></div>
+            <div class="hud-item">💀 <span id="kills">0</span></div>
         </div>
         
-        <!-- Crosshair -->
         <div id="crosshair">+</div>
         
-        <!-- Mobile Controls -->
         <div id="mobileControls">
-            <div id="joystickMove">
-                <div id="joystickMoveKnob"></div>
-            </div>
-            <div id="joystickAim">
-                <div id="joystickAimKnob"></div>
-            </div>
-            <button id="shootBtn" class="mobile-btn">🔫</button>
-            <button id="reloadBtn" class="mobile-btn">🔄</button>
-            <button id="jumpBtn" class="mobile-btn">⬆️</button>
-            <button id="switchWeaponBtn" class="mobile-btn">🔁</button>
+            <button id="shootBtn" ontouchstart="shoot()" onclick="shoot()">🔫</button>
+            <button id="reloadBtn" ontouchstart="reload()" onclick="reload()">🔄</button>
         </div>
         
-        <!-- Kill Feed -->
         <div id="killFeed"></div>
-        
-        <!-- Chat -->
-        <div id="chatBox" style="display:none;">
-            <div id="chatMessages"></div>
-            <input type="text" id="chatInput" placeholder="Nhấn Enter để chat...">
-        </div>
     </div>
 
     <!-- Game Over -->
     <div id="gameOver" class="screen">
         <h2 id="gameOverTitle">💀 GAME OVER</h2>
-        <div class="stats-grid">
+        <div class="stats">
             <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-label">Điểm</div>
-                <div class="stat-value" id="finalScore">0</div>
+                <div>🎯 Điểm</div>
+                <div class="stat-val" id="finalScore">0</div>
             </div>
             <div class="stat-card">
-                <div class="stat-icon">💀</div>
-                <div class="stat-label">Hạ gục</div>
-                <div class="stat-value" id="finalKills">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">💀</div>
-                <div class="stat-label">Chết</div>
-                <div class="stat-value" id="finalDeaths">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-icon">🎯</div>
-                <div class="stat-label">Độ chính xác</div>
-                <div class="stat-value" id="finalAccuracy">0%</div>
+                <div>💀 Hạ gục</div>
+                <div class="stat-val" id="finalKills">0</div>
             </div>
         </div>
-        <button onclick="game.restartGame()" class="btn btn-restart">🔄 CHƠI LẠI</button>
-        <button onclick="game.backToMenu()" class="btn btn-back">🏠 MENU</button>
+        <button onclick="restartGame()" class="btn btn-solo">🔄 CHƠI LẠI</button>
+        <button onclick="backToMenu()" class="btn" style="background:rgba(255,255,255,0.2)">🏠 MENU</button>
     </div>
 
-    <script type="module" src="js/main.js"></script>
+    <!-- GAME ENGINE SIÊU NHẸ - Tất cả trong 1 file -->
+    <script>
+        // ============ MINIKS GAME ENGINE ============
+        // Toàn bộ game trong 1 file để load nhanh nhất
+        
+        let canvas, ctx, gameRunning = false;
+        let player, bots = [], bullets = [], particles = [];
+        let score = 0, kills = 0;
+        let selectedWeapon = 'rifle';
+        
+        // Vũ khí
+        const weapons = {
+            shotgun: { name:'Súng Săn', icon:'🔫', damage:80, ammo:8, maxAmmo:8, fireRate:800, bulletCount:8, spread:0.3, color:'#ff8844' },
+            rifle: { name:'Súng Trường', icon:'🎯', damage:45, ammo:30, maxAmmo:30, fireRate:150, bulletCount:1, spread:0.05, color:'#ffdd44' },
+            sniper: { name:'Bắn Tỉa', icon:'🔭', damage:150, ammo:5, maxAmmo:5, fireRate:1200, bulletCount:1, spread:0.01, color:'#ff4444' },
+            laser: { name:'Súng Laser', icon:'⚡', damage:60, ammo:100, maxAmmo:100, fireRate:100, bulletCount:1, spread:0.02, color:'#00ffff' },
+            rocket: { name:'Rocket', icon:'🚀', damage:200, ammo:3, maxAmmo:3, fireRate:1800, bulletCount:1, spread:0.1, color:'#ff4400' }
+        };
+        
+        // Player
+        class Player {
+            constructor() {
+                this.x = canvas.width/2;
+                this.y = canvas.height/2;
+                this.z = 0;
+                this.radius = 20;
+                this.health = 100;
+                this.shield = 50;
+                this.alive = true;
+                this.speed = 5;
+                this.weapon = weapons[selectedWeapon];
+                this.ammo = this.weapon.ammo;
+                this.lastShot = 0;
+                this.reloading = false;
+                this.angle = 0;
+            }
+            
+            update(keys) {
+                if(!this.alive) return;
+                
+                // Di chuyển
+                if(keys['w'] || keys['ArrowUp']) this.y -= this.speed;
+                if(keys['s'] || keys['ArrowDown']) this.y += this.speed;
+                if(keys['a'] || keys['ArrowLeft']) this.x -= this.speed;
+                if(keys['d'] || keys['ArrowRight']) this.x += this.speed;
+                
+                // Giới hạn map
+                this.x = Math.max(30, Math.min(canvas.width-30, this.x));
+                this.y = Math.max(30, Math.min(canvas.height-30, this.y));
+                
+                // Góc nhìn theo chuột
+                this.angle = Math.atan2(mouse.y - this.y, mouse.x - this.x);
+            }
+            
+            draw(ctx) {
+                if(!this.alive) return;
+                
+                // Bóng đổ 3D
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y+5, this.radius, this.radius/2, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                // Thân người chơi
+                const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+                gradient.addColorStop(0, '#4a4'); gradient.addColorStop(1, '#1a1');
+                ctx.fillStyle = gradient;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+                
+                // Vũ khí
+                ctx.strokeStyle = '#666';
+                ctx.lineWidth = 4;
+                ctx.beginPath();
+                ctx.moveTo(this.x, this.y);
+                ctx.lineTo(
+                    this.x + Math.cos(this.angle) * this.radius*1.5,
+                    this.y + Math.sin(this.angle) * this.radius*1.5
+                );
+                ctx.stroke();
+                
+                // Tên
+                ctx.fillStyle = '#fff';
+                ctx.font = '12px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText('BẠN', this.x, this.y-30);
+                
+                // Thanh máu
+                ctx.fillStyle = '#f00';
+                ctx.fillRect(this.x-25, this.y-25, 50, 4);
+                ctx.fillStyle = '#0f0';
+                ctx.fillRect(this.x-25, this.y-25, 50*(this.health/100), 4);
+            }
+            
+            shoot() {
+                const now = Date.now();
+                if(!this.alive || this.reloading || this.ammo <= 0 || now - this.lastShot < this.weapon.fireRate) return;
+                
+                this.lastShot = now;
+                this.ammo--;
+                
+                const weapon = this.weapon;
+                for(let i=0; i<weapon.bulletCount; i++) {
+                    const spread = (Math.random()-0.5) * weapon.spread;
+                    bullets.push({
+                        x: this.x + Math.cos(this.angle)*25,
+                        y: this.y + Math.sin(this.angle)*25,
+                        vx: Math.cos(this.angle+spread)*15,
+                        vy: Math.sin(this.angle+spread)*15,
+                        damage: weapon.damage/weapon.bulletCount,
+                        color: weapon.color,
+                        life: 60,
+                        owner: 'player'
+                    });
+                }
+                
+                // Hiệu ứng muzzle flash
+                for(let i=0; i<5; i++) {
+                    particles.push({
+                        x: this.x + Math.cos(this.angle)*25,
+                        y: this.y + Math.sin(this.angle)*25,
+                        vx: (Math.random()-0.5)*3,
+                        vy: (Math.random()-0.5)*3,
+                        life: 10,
+                        color: '#ffaa00'
+                    });
+                }
+                
+                updateHUD();
+            }
+            
+            reload() {
+                if(this.reloading || this.ammo === this.weapon.maxAmmo) return;
+                this.reloading = true;
+                setTimeout(() => {
+                    this.ammo = this.weapon.maxAmmo;
+                    this.reloading = false;
+                    updateHUD();
+                }, 1500);
+            }
+            
+            takeDamage(dmg) {
+                if(this.shield > 0) {
+                    const shieldDmg = Math.min(this.shield, dmg*0.7);
+                    this.shield -= shieldDmg;
+                    dmg -= shieldDmg;
+                }
+                this.health -= dmg;
+                if(this.health <= 0) {
+                    this.health = 0;
+                    this.alive = false;
+                    gameOver();
+                }
+                updateHUD();
+            }
+        }
+        
+        // Bot
+        class Bot {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.radius = 18;
+                this.health = 100;
+                this.alive = true;
+                this.speed = 2 + Math.random()*2;
+                this.aiTimer = 0;
+                this.aiAngle = Math.random()*Math.PI*2;
+                this.name = 'BOT_' + Math.floor(Math.random()*100);
+                this.weapon = weapons[['shotgun','rifle','laser'][Math.floor(Math.random()*3)]];
+                this.ammo = this.weapon.maxAmmo;
+                this.lastShot = 0;
+            }
+            
+            update() {
+                if(!this.alive) return;
+                
+                this.aiTimer--;
+                if(this.aiTimer <= 0) {
+                    this.aiAngle = Math.atan2(player.y-this.y, player.x-this.x) + (Math.random()-0.5)*0.5;
+                    this.aiTimer = 30 + Math.random()*30;
+                }
+                
+                this.x += Math.cos(this.aiAngle)*this.speed;
+                this.y += Math.sin(this.aiAngle)*this.speed;
+                
+                this.x = Math.max(30, Math.min(canvas.width-30, this.x));
+                this.y = Math.max(30, Math.min(canvas.height-30, this.y));
+                
+                // Bắn khi gần player
+                const dist = Math.hypot(player.x-this.x, player.y-this.y);
+                if(dist < 300 && Date.now()-this.lastShot > this.weapon.fireRate) {
+                    this.lastShot = Date.now();
+                    const angle = Math.atan2(player.y-this.y, player.x-this.x);
+                    bullets.push({
+                        x: this.x, y: this.y,
+                        vx: Math.cos(angle)*12,
+                        vy: Math.sin(angle)*12,
+                        damage: this.weapon.damage,
+                        color: '#ff4444',
+                        life: 60,
+                        owner: 'bot'
+                    });
+                }
+            }
+            
+            draw(ctx) {
+                if(!this.alive) return;
+                
+                ctx.fillStyle = 'rgba(0,0,0,0.3)';
+                ctx.beginPath();
+                ctx.ellipse(this.x, this.y+5, this.radius, this.radius/2, 0, 0, Math.PI*2);
+                ctx.fill();
+                
+                ctx.fillStyle = '#f44';
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI*2);
+                ctx.fill();
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 1;
+                ctx.stroke();
+                
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, this.x, this.y-22);
+                
+                ctx.fillStyle = '#f00';
+                ctx.fillRect(this.x-20, this.y-18, 40, 3);
+                ctx.fillStyle = '#0f0';
+                ctx.fillRect(this.x-20, this.y-18, 40*(this.health/100), 3);
+            }
+            
+            takeDamage(dmg) {
+                this.health -= dmg;
+                if(this.health <= 0) {
+                    this.health = 0;
+                    this.alive = false;
+                    score += 100;
+                    kills++;
+                    // Explosion effect
+                    for(let i=0; i<15; i++) {
+                        particles.push({
+                            x: this.x, y: this.y,
+                            vx: (Math.random()-0.5)*8,
+                            vy: (Math.random()-0.5)*8,
+                            life: 20, color: '#ff4400'
+                        });
+                    }
+                    addKillMessage('Bạn', this.name);
+                }
+            }
+        }
+        
+        // Mouse tracking
+        const mouse = { x: canvas?.width/2 || 400, y: canvas?.height/2 || 300 };
+        const keys = {};
+        
+        function init() {
+            canvas = document.getElementById('gameCanvas');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+            ctx = canvas.getContext('2d');
+            
+            window.addEventListener('mousemove', e => {
+                mouse.x = e.clientX;
+                mouse.y = e.clientY;
+            });
+            
+            window.addEventListener('keydown', e => keys[e.key] = true);
+            window.addEventListener('keyup', e => keys[e.key] = false);
+            
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+        }
+        
+        function startGame(mode) {
+            document.getElementById('loading').style.opacity = '0';
+            setTimeout(() => {
+                document.getElementById('loading').style.display = 'none';
+            }, 500);
+            
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('gameScreen').classList.add('active');
+            
+            init();
+            
+            player = new Player();
+            bots = [];
+            bullets = [];
+            particles = [];
+            score = 0;
+            kills = 0;
+            
+            // Tạo bot
+            for(let i=0; i<8; i++) {
+                bots.push(new Bot(
+                    Math.random()*(canvas.width-100)+50,
+                    Math.random()*(canvas.height-100)+50
+                ));
+            }
+            
+            gameRunning = true;
+            updateHUD();
+            gameLoop();
+        }
+        
+        function gameLoop() {
+            if(!gameRunning) return;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Vẽ nền map 3D giả
+            drawMap();
+            
+            // Update & draw player
+            player.update(keys);
+            player.draw(ctx);
+            
+            // Update & draw bots
+            bots = bots.filter(b => b.alive);
+            bots.forEach(bot => {
+                bot.update();
+                bot.draw(ctx);
+            });
+            
+            // Update & draw bullets
+            bullets = bullets.filter(b => b.life > 0);
+            bullets.forEach(b => {
+                b.x += b.vx;
+                b.y += b.vy;
+                b.life--;
+                
+                // Vẽ đạn với trail
+                ctx.fillStyle = b.color;
+                ctx.shadowBlur = 10;
+                ctx.shadowColor = b.color;
+                ctx.beginPath();
+                ctx.arc(b.x, b.y, 3, 0, Math.PI*2);
+                ctx.fill();
+                ctx.shadowBlur = 0;
+            });
+            
+            // Update & draw particles
+            particles = particles.filter(p => p.life > 0);
+            particles.forEach(p => {
+                p.x += p.vx;
+                p.y += p.vy;
+                p.life--;
+                ctx.fillStyle = p.color;
+                ctx.globalAlpha = p.life/20;
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, 2, 0, Math.PI*2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            });
+            
+            // Check collisions
+            checkCollisions();
+            
+            // Spawn thêm bot nếu ít
+            if(bots.length < 3) {
+                bots.push(new Bot(
+                    Math.random()*(canvas.width-100)+50,
+                    Math.random()*(canvas.height-100)+50
+                ));
+            }
+            
+            requestAnimationFrame(gameLoop);
+        }
+        
+        function drawMap() {
+            // Nền gradient
+            const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+            gradient.addColorStop(0, '#1a1a2e');
+            gradient.addColorStop(1, '#0a0a1a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Grid 3D
+            ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+            ctx.lineWidth = 1;
+            const gridSize = 50;
+            for(let x=0; x<canvas.width; x+=gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            for(let y=0; y<canvas.height; y+=gridSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+            
+            // Obstacles
+            ctx.fillStyle = 'rgba(100,100,100,0.5)';
+            [
+                [200,200,80],[500,300,60],[700,150,70],
+                [300,500,90],[600,450,50],[150,400,65]
+            ].forEach(([x,y,r]) => {
+                ctx.beginPath();
+                ctx.arc(x, y, r, 0, Math.PI*2);
+                ctx.fill();
+            });
+        }
+        
+        function checkCollisions() {
+            bullets.forEach(b => {
+                if(b.owner === 'player') {
+                    bots.forEach(bot => {
+                        if(bot.alive && Math.hypot(b.x-bot.x, b.y-bot.y) < bot.radius) {
+                            bot.takeDamage(b.damage);
+                            b.life = 0;
+                        }
+                    });
+                } else if(b.owner === 'bot') {
+                    if(player.alive && Math.hypot(b.x-player.x, b.y-player.y) < player.radius) {
+                        player.takeDamage(b.damage);
+                        b.life = 0;
+                    }
+                }
+            });
+        }
+        
+        function shoot() {
+            if(player) player.shoot();
+        }
+        
+        function reload() {
+            if(player) player.reload();
+        }
+        
+        function updateHUD() {
+            document.getElementById('healthFill').style.width = player.health + '%';
+            document.getElementById('healthText').textContent = Math.round(player.health);
+            document.getElementById('ammo').textContent = player.weapon.icon + ' ' + player.ammo + '/' + player.weapon.maxAmmo;
+            document.getElementById('score').textContent = score;
+            document.getElementById('kills').textContent = kills;
+        }
+        
+        function addKillMessage(killer, victim) {
+            const feed = document.getElementById('killFeed');
+            const msg = document.createElement('div');
+            msg.className = 'kill-msg';
+            msg.textContent = killer + ' 💀 ' + victim;
+            feed.appendChild(msg);
+            setTimeout(() => msg.remove(), 3000);
+        }
+        
+        function gameOver() {
+            gameRunning = false;
+            document.getElementById('finalScore').textContent = score;
+            document.getElementById('finalKills').textContent = kills;
+            document.getElementById('gameOverTitle').textContent = '💀 GAME OVER';
+            
+            setTimeout(() => {
+                document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+                document.getElementById('gameOver').classList.add('active');
+            }, 500);
+        }
+        
+        function restartGame() {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            startGame('solo');
+        }
+        
+        function backToMenu() {
+            gameRunning = false;
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById('mainMenu').classList.add('active');
+        }
+        
+        function selectWeapon() {
+            const types = Object.keys(weapons);
+            const current = types.indexOf(selectedWeapon);
+            selectedWeapon = types[(current+1) % types.length];
+            alert('Đã chọn: ' + weapons[selectedWeapon].name + ' ' + weapons[selectedWeapon].icon);
+        }
+        
+        // Auto-load
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                document.getElementById('loading').style.opacity = '0';
+                setTimeout(() => {
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('mainMenu').classList.add('active');
+                }, 500);
+            }, 800); // Chỉ load 0.8 giây
+        });
+        
+        // Touch support
+        document.addEventListener('touchmove', e => {
+            if(gameRunning) {
+                mouse.x = e.touches[0].clientX;
+                mouse.y = e.touches[0].clientY;
+            }
+        });
+    </script>
 </body>
 </html>
